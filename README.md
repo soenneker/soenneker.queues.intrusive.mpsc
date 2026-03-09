@@ -1,6 +1,7 @@
 [![](https://img.shields.io/nuget/v/soenneker.queues.intrusive.mpsc.svg?style=for-the-badge)](https://www.nuget.org/packages/soenneker.queues.intrusive.mpsc/)
 [![](https://img.shields.io/github/actions/workflow/status/soenneker/soenneker.queues.intrusive.mpsc/publish-package.yml?style=for-the-badge)](https://github.com/soenneker/soenneker.queues.intrusive.mpsc/actions/workflows/publish-package.yml)
 [![](https://img.shields.io/nuget/dt/soenneker.queues.intrusive.mpsc.svg?style=for-the-badge)](https://www.nuget.org/packages/soenneker.queues.intrusive.mpsc/)
+[![](https://img.shields.io/github/actions/workflow/status/soenneker/soenneker.queues.intrusive.mpsc/codeql.yml?label=CodeQL&style=for-the-badge)](https://github.com/soenneker/soenneker.queues.intrusive.mpsc/actions/workflows/codeql.yml)
 
 # ![](https://user-images.githubusercontent.com/4441470/224455560-91ed3ee7-f510-4041-a8d2-3fc093025112.png) Soenneker.Queues.Intrusive.Mpsc
 
