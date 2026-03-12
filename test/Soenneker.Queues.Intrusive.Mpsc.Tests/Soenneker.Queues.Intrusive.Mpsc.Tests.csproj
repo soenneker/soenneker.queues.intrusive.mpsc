@@ -15,7 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Soenneker.Queues.Intrusive.Mpsc.csproj" />
+        <ProjectReference Include="..\..\src\Soenneker.Queues.Intrusive.Mpsc\Soenneker.Queues.Intrusive.Mpsc.csproj" />
     </ItemGroup>
 
 </Project>
