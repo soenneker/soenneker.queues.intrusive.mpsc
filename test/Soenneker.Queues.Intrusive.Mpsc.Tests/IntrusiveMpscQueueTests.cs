@@ -1,15 +1,14 @@
-using Xunit;
 
 namespace Soenneker.Queues.Intrusive.Mpsc.Tests;
 
 public sealed class IntrusiveMpscQueueTests
 {
 
-    public IntrusiveMpscQueueTests(ITestOutputHelper output)
+    public IntrusiveMpscQueueTests( output)
     {
     }
 
-    [Fact]
+    [Test]
     public void Default()
     {
 
