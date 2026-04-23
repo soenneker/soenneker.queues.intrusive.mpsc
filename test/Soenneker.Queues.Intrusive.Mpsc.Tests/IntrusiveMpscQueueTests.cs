@@ -3,8 +3,7 @@ namespace Soenneker.Queues.Intrusive.Mpsc.Tests;
 
 public sealed class IntrusiveMpscQueueTests
 {
-
-    public IntrusiveMpscQueueTests( output)
+    public IntrusiveMpscQueueTests()
     {
     }
 
