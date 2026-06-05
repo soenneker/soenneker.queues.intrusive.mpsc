@@ -32,16 +32,6 @@ public sealed class IntrusiveMpscQueue<TNode> where TNode : class, IIntrusiveNod
     // Producer-shared tail pointer.
     private TNode _tail;
 
-    /// <summary>
-    /// Initializes a new <see cref="IntrusiveMpscQueue{TNode}"/> using the provided stub node.
-    /// </summary>
-    /// <param name="stub">
-    /// A permanent sentinel node that remains allocated for the lifetime of the queue.
-    /// Its <see cref="IIntrusiveNode{TNode}.Next"/> reference must initially be <c>null</c>.
-    /// </param>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown if <paramref name="stub"/> is <c>null</c>.
-    /// </exception>
     public IntrusiveMpscQueue(TNode stub)
     {
         if (stub is null)
