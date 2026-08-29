@@ -112,11 +112,13 @@ public sealed class IntrusiveMpscQueue<TNode> where TNode : class, IIntrusiveNod
     /// Attempts to dequeue a node from the queue, spinning up to <paramref name="maxSpins"/>
     /// only to cover the producer link-publish window.
     /// </summary>
+    /// <param name="node">Node to inspect or transform.</param>
+    /// <param name="maxSpins">Max Spins for the try dequeue spin operation.</param>
+    /// <returns>true if the requested update was applied; otherwise, false.</returns>
     /// <remarks>
     /// If the queue is truly empty, returns <c>false</c>.
     /// If a producer has advanced the tail but has not yet published the link from the current head,
-    /// this method spins up to <paramref name="maxSpins"/> waiting for that link to appear.
-    /// It does not wait for new nodes beyond that window.
+    /// this method spins up to <paramref name="maxSpins"/> times before returning <see langword="false"/>.
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public bool TryDequeueSpin(out TNode node, int maxSpins)
@@ -164,6 +166,8 @@ public sealed class IntrusiveMpscQueue<TNode> where TNode : class, IIntrusiveNod
     /// <summary>
     /// Attempts to dequeue a node from the queue, spinning only in the producer link-publish window.
     /// </summary>
+    /// <param name="node">Node to inspect or transform.</param>
+    /// <returns>true if the requested update was applied; otherwise, false.</returns>
     /// <remarks>
     /// If the queue is truly empty, this returns <c>false</c>.
     /// If a producer has advanced the tail pointer but has not yet published the link from the current head,
@@ -249,6 +253,7 @@ public sealed class IntrusiveMpscQueue<TNode> where TNode : class, IIntrusiveNod
     /// <summary>
     /// Determines whether the queue is currently empty.
     /// </summary>
+    /// <returns>true if the queue is currently empty; otherwise, false.</returns>
     /// <remarks>
     /// Consumer-thread only. This is a best-effort check and may transiently return
     /// <c>true</c> while a producer is mid-enqueue (tail advanced but link not yet published).
