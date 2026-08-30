@@ -26,6 +26,8 @@ namespace Soenneker.Queues.Intrusive.Mpsc;
 /// </remarks>
 public sealed class IntrusiveMpscQueue<TNode> where TNode : class, IIntrusiveNode<TNode>
 {
+    private readonly TNode _stub;
+
     // Consumer-owned head pointer (initially the stub).
     private TNode _head;
 
@@ -39,6 +41,7 @@ public sealed class IntrusiveMpscQueue<TNode> where TNode : class, IIntrusiveNod
 
         stub.Next = null;
 
+        _stub = stub;
         _head = stub;
         _tail = stub;
     }
@@ -97,6 +100,37 @@ public sealed class IntrusiveMpscQueue<TNode> where TNode : class, IIntrusiveNod
         TNode head = _head!;
         TNode? next = Volatile.Read(ref head.Next);
 
+        if (ReferenceEquals(head, _stub))
+        {
+            if (next is null)
+            {
+                node = null!;
+                return false;
+            }
+
+            _head = next;
+            head = next;
+            next = Volatile.Read(ref head.Next);
+        }
+
+        if (next is not null)
+        {
+            _head = next;
+            head.Next = null;
+            node = head;
+            return true;
+        }
+
+        TNode tail = Volatile.Read(ref _tail!);
+        if (!ReferenceEquals(head, tail))
+        {
+            node = null!;
+            return false;
+        }
+
+        EnqueueStub();
+        next = Volatile.Read(ref head.Next);
+
         if (next is null)
         {
             node = null!;
@@ -104,8 +138,17 @@ public sealed class IntrusiveMpscQueue<TNode> where TNode : class, IIntrusiveNod
         }
 
         _head = next;
-        node = next;
+        head.Next = null;
+        node = head;
         return true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void EnqueueStub()
+    {
+        _stub.Next = null;
+        TNode previous = Interlocked.Exchange(ref _tail!, _stub);
+        Volatile.Write(ref previous.Next, _stub);
     }
 
     /// <summary>
@@ -123,44 +166,23 @@ public sealed class IntrusiveMpscQueue<TNode> where TNode : class, IIntrusiveNod
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public bool TryDequeueSpin(out TNode node, int maxSpins)
     {
-        TNode head = _head!;
-        TNode? next = Volatile.Read(ref head.Next);
+        if (TryDequeue(out node))
+            return true;
 
-        if (next is null)
+        if (maxSpins <= 0 || IsEmpty())
+            return false;
+
+        var spinWait = new SpinWait();
+        for (var i = 0; i < maxSpins; i++)
         {
-            // If head == tail, queue is empty (no producer has advanced tail).
-            if (ReferenceEquals(head, Volatile.Read(ref _tail!)))
-            {
-                node = null!;
-                return false;
-            }
+            spinWait.SpinOnce();
 
-            // A producer likely swapped tail but hasn't linked prev.Next yet.
-            if (maxSpins <= 0)
-            {
-                node = null!;
-                return false;
-            }
-
-            var sw = new SpinWait();
-            for (var i = 0; i < maxSpins; i++)
-            {
-                sw.SpinOnce();
-                next = Volatile.Read(ref head.Next);
-                if (next is not null)
-                    break;
-            }
-
-            if (next is null)
-            {
-                node = null!;
-                return false;
-            }
+            if (TryDequeue(out node))
+                return true;
         }
 
-        _head = next!;
-        node = next!;
-        return true;
+        node = null!;
+        return false;
     }
 
     /// <summary>
@@ -178,28 +200,19 @@ public sealed class IntrusiveMpscQueue<TNode> where TNode : class, IIntrusiveNod
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public bool TryDequeueSpinUntilLinked(out TNode node)
     {
-        TNode head = _head!;
-        TNode? next = Volatile.Read(ref head.Next);
+        if (TryDequeue(out node))
+            return true;
 
-        if (next is null)
+        if (IsEmpty())
+            return false;
+
+        var spinWait = new SpinWait();
+        do
         {
-            if (ReferenceEquals(head, Volatile.Read(ref _tail!)))
-            {
-                node = null!;
-                return false;
-            }
-
-            var sw = new SpinWait();
-            do
-            {
-                sw.SpinOnce();
-                next = Volatile.Read(ref head.Next);
-            }
-            while (next is null);
+            spinWait.SpinOnce();
         }
+        while (!TryDequeue(out node));
 
-        _head = next!;
-        node = next!;
         return true;
     }
 
@@ -207,8 +220,8 @@ public sealed class IntrusiveMpscQueue<TNode> where TNode : class, IIntrusiveNod
     /// Gets the current consumer head node.
     /// </summary>
     /// <remarks>
-    /// Consumer-thread only. The returned node is typically the permanent stub or the most
-    /// recently dequeued node and may be used for recycling or cleanup logic.
+    /// Consumer-thread only. The returned node is an internal queue anchor and remains owned by the queue.
+    /// Do not mutate, reuse, or enqueue it.
     /// </remarks>
     public TNode Head
     {
