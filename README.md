@@ -10,6 +10,8 @@ A lock-free intrusive multi-producer, single-consumer queue for low-level schedu
 
 The queue stores its forward link on each node, so enqueue and dequeue do not allocate wrapper objects. In exchange, callers must follow the node-ownership and single-consumer rules exactly.
 
+The producer tail is cache-line separated from the consumer head to reduce cache-coherency traffic under contention. This adds 56 bytes to each queue object in exchange for higher concurrent throughput.
+
 ## Install
 
 ```bash
