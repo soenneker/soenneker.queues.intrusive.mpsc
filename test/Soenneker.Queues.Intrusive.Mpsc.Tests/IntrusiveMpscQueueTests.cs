@@ -50,7 +50,7 @@ public sealed class IntrusiveMpscQueueTests
     }
 
     [Test]
-    public async Task Concurrent_producers_publish_every_node_once()
+    public async ValueTask Concurrent_producers_publish_every_node_once()
     {
         const int producerCount = 4;
         const int nodesPerProducer = 1_000;
